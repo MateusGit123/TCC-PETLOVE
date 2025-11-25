@@ -10,6 +10,8 @@ from flask_login import (
     LoginManager, UserMixin, login_user, current_user, logout_user, login_required
 )
 from flask_migrate import Migrate
+from flask_mail import Mail, Message
+from itsdangerous import URLSafeTimedSerializer
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import FlaskForm
 from sqlalchemy import Table, Column, Integer, ForeignKey
@@ -19,17 +21,49 @@ from werkzeug.utils import secure_filename
 from wtforms import StringField, PasswordField, SubmitField, SelectField
 from wtforms.validators import DataRequired, Email, EqualTo, Length, Optional, ValidationError
 
-
-
-
 app = Flask(__name__)
-bcrypt = Bcrypt(app)  
+bcrypt = Bcrypt(app)
 
-app.config['SECRET_KEY'] = os.urandom(24)  # Gera uma chave secreta aleatória de 24 bytes
+app.config['SECRET_KEY'] = os.urandom(24)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///petshop.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = os.path.join(os.getcwd(), 'static', 'uploads')
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif'}
+
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USE_SSL'] = False
+app.config['MAIL_USERNAME'] = 'producoespjomal@gmail.com'
+app.config['MAIL_PASSWORD'] = 'nyesbssasxnsirzt'
+
+mail = Mail(app)
+serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+
+def gerar_token(email):
+    return serializer.dumps(email, salt='recuperacao_senha')
+
+def validar_token(token, expira_em=3600):
+    try:
+        email = serializer.loads(token, salt='recuperacao_senha', max_age=expira_em)
+        return email
+    except Exception:
+        return None
+
+def enviar_email_recuperacao(user):
+    token = gerar_token(user.email)
+    link = url_for('recadastrar', token=token, _external=True)
+    msg = Message(
+        subject="Recuperação de senha - Pet Com Carinho",
+        sender=app.config['MAIL_USERNAME'],
+        recipients=[user.email]
+    )
+    msg.body = (
+        f"Olá, {user.username},\n\n"
+        f"Para redefinir sua senha, clique no link abaixo:\n{link}\n\n"
+        "Se você não solicitou, ignore este email."
+    )
+    mail.send(msg)
 
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
@@ -174,39 +208,45 @@ def register():
     
     return render_template('register.html', form=form)
 
-@app.route("/recadastrar", methods=['GET', 'POST'])
-def recadastrar():
-    email = request.args.get('email')
-    nome = request.args.get('nome')
-
-    print(f"Email: {email}, Nome: {nome}")  
-
+@app.route('/recadastrar/<token>', methods=['GET', 'POST'])
+def recadastrar(token):
+    email = validar_token(token)
     if not email:
-        flash('Email não fornecido. Tente novamente.', 'danger')
+        flash("Token inválido ou expirado.", "danger")
         return redirect(url_for('esqueci_senha'))
 
     user = User.query.filter_by(email=email).first()
-
     if not user:
-        flash('Usuário não encontrado. Tente novamente.', 'danger')
+        flash("Usuário não encontrado.", "danger")
         return redirect(url_for('esqueci_senha'))
 
     if request.method == 'POST':
-        nova_senha = request.form['nova_senha']
-        confirmar_senha = request.form['confirmar_senha']
+        nova_senha = request.form.get('password')
+        confirmar = request.form.get('confirm_password')
 
-        if nova_senha != confirmar_senha:
-            flash('As senhas não coincidem. Tente novamente.', 'danger')
-            return redirect(url_for('recadastrar', email=email, nome=nome))
+        if not nova_senha or not confirmar:
+            flash("Preencha todos os campos.", "danger")
+            return render_template('recadastrar.html')
 
-        hashed_password = bcrypt.generate_password_hash(nova_senha).decode('utf-8')
-        user.password = hashed_password
+        if nova_senha != confirmar:
+            flash("As senhas não coincidem.", "danger")
+            return render_template('recadastrar.html')
+
+        try:
+            validate_password(None, type('obj', (object,), {'data': nova_senha}))
+        except ValidationError as e:
+            flash(str(e), "danger")
+            return render_template('recadastrar.html')
+
+        hashed = bcrypt.generate_password_hash(nova_senha).decode('utf-8')
+        user.password = hashed
         db.session.commit()
 
-        flash('Senha alterada com sucesso!', 'success')
+        flash("Senha redefinida com sucesso! Faça login.", "success")
         return redirect(url_for('login'))
 
-    return render_template('recadastrar.html', email=email, nome=nome)
+    return render_template('recadastrar.html')
+
 
 @app.route("/login", methods=['GET', 'POST'])
 def login():
@@ -320,15 +360,11 @@ def home_prestador():
     return render_template('homeprestador.html', transacoes=transacoes_json)
 
 
-# Rota para logout
 @app.route("/logout")
 def logout():
-    role = current_user.role  
-    logout_user()  
-    if role == 'cliente':
-        return redirect(url_for('home_cliente'))  
-    else:
-        return redirect(url_for('home_prestador'))  
+    logout_user()
+    flash("Você saiu com sucesso.", "success")
+    return redirect(url_for('login'))
 
 @app.errorhandler(403)
 def forbidden_error(error):
@@ -992,23 +1028,27 @@ def finalizada_compra():
 @app.route('/confirmar_compra', methods=['POST'])
 @login_required
 def confirmar_compra():
-    # Como a confirmação já está na rota finalizar_compra, aqui só redireciona
     return redirect(url_for('home'))
 
 @app.route("/esqueci_senha", methods=['GET', 'POST'])
 def esqueci_senha():
     if request.method == 'POST':
         email = request.form.get('email')
-        nome = request.form.get('nome')  
-        
+        nome = request.form.get('nome')
+
         user = User.query.filter_by(email=email, username=nome).first()
 
         if user:
-            return redirect(url_for('recadastrar', email=email, nome=nome))
+            try:
+                enviar_email_recuperacao(user)
+                flash("Um link de recuperação de senha foi enviado para seu email.", "success")
+            except Exception as e:
+                flash(f"Erro ao enviar email: {e}", "danger")
         else:
-            flash('Usuário não encontrado.', 'danger')
-    
-    return render_template('esqueci_senha.html')
+            flash("Usuário não encontrado. Verifique o nome e o email.", "danger")
+
+    return render_template("esqueci_senha.html")
+
 
 class Produto(db.Model):
     id = db.Column(db.Integer, primary_key=True)

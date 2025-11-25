@@ -74,7 +74,6 @@
         <div class="container-fluid">
             <a class="navbar-brand" href="http://127.0.0.1:5000/home_cliente">
                 <img src="{{ url_for('static', filename='images/LOGO.png') }}" alt="PetLove Logo" style="height: 80px; margin-left: 70px; width: 70%"/>
-                <a style="font-size: 24px; color: #000000; text-decoration: none;">PETLOVE</a>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -130,7 +129,7 @@
 
     <div id="profileContent" class="container-fluid content-container">
         <!-- Mensagem de boas-vindas ao usuário -->
-        <h1 class="text-center">Welcome {{ current_user.username }}!</h1>
+        <h1 class="text-center">Seja Bem-Vindo, {{ current_user.username }}!</h1>
         <p class="text-center mt-3">Bem-vindo ao painel de gerenciamento do seu pet shop. Selecione uma das opções de navegação acima para acessar as funcionalidades.</p>
 
         <!-- Dica aleatória -->
@@ -141,7 +140,7 @@
     </div>
 
     <footer class="bg-dark text-white text-center py-3 mt-5 fixed-bottom">
-        <p>© 2025 PetLove - Todos os direitos reservados</p>
+        <p>© 2025 Pet Com Carinho - Todos os direitos reservados</p>
     </footer>
 
     <script>
