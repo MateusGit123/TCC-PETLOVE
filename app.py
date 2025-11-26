@@ -617,6 +617,12 @@ def adicionar_agendamento():
 
     clientes = Cliente.query.all()
     produtos = Produto.query.all()
+
+    if current_user.role == "cliente":
+        pets = Pet.query.filter_by(cliente_id=current_user.id).all()
+    else:
+        pets = Pet.query.all()
+
     return render_template('adicionar_agendamento.html', clientes=clientes, produtos=produtos)
 
 @app.route('/agendamentos')

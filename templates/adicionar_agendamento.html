@@ -4,9 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agendar Serviço</title>
+
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
     <style>
-        /* Estilos globais */
         * {
             font-family: "Poppins", sans-serif;
             margin: 0;
@@ -17,10 +20,9 @@
         body {
             background: url('/static/images/agendamentos_background.jpg') no-repeat center center fixed;
             background-size: cover;
-            height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            min-height: 100vh;
+            overflow-y: auto;
+            padding-top: 150px;
         }
 
         .container-agendamento {
@@ -31,6 +33,8 @@
             padding: 30px;
             border-radius: 15px;
             box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.5);
+            margin: auto;
+            margin-bottom: 80px;
         }
 
         .agendamento-title {
@@ -43,49 +47,63 @@
         .label-box {
             margin-bottom: 10px;
             font-size: 14px;
-            color: white;
         }
 
         .input-box-agendamento {
-            position: relative;
             margin-bottom: 20px;
         }
 
-        .input-box-agendamento select, 
+        .input-box-agendamento select,
         .input-box-agendamento input {
             width: 100%;
             padding: 12px 15px;
             border: none;
             border-radius: 8px;
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.15);
             color: white;
             outline: none;
             font-size: 14px;
         }
 
-        .input-box-agendamento select::placeholder,
         .input-box-agendamento input::placeholder {
-            color: rgba(255, 255, 255, 0.7);
+            color: #cccccc;
+        }
+
+        .input-box-agendamento select option[value=""] {
+            color: #cccccc;
+        }
+
+        .input-box-agendamento select option {
+            color: black;
         }
 
         .agendamento-button {
             width: 100%;
             padding: 12px;
-            background-color: #DEAD6F; /* Cor de fundo */
+            background-color: #DEAD6F;
             color: white;
-            border: 2px solid #DEAD6F; /* Cor da borda */
+            border: 2px solid #DEAD6F;
             border-radius: 8px;
             font-size: 16px;
             font-weight: bold;
             cursor: pointer;
-            transition: 0.3s;
         }
 
-        .agendamento-button:hover {
-            box-shadow:
-                rgba(222, 173, 111, 0.4) 5px 5px,
-                rgba(222, 173, 111, 0.3) 10px 10px,
-                rgba(222, 173, 111, 0.2) 15px 15px;
+        .navbar {
+            height: 120px;
+            background-color: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .navbar-brand img {
+            height: 105px;
+            width: auto;
+            margin-left: 40px;
+        }
+
+        .nav-link {
+            font-size: 1.25rem;
+            font-weight: 500;
         }
 
         .flashes {
@@ -95,164 +113,138 @@
         }
 
         .flashes li {
-            background-color: #28a745; /* Verde */
+            background-color: #28a745;
             color: white;
             padding: 10px;
             border-radius: 5px;
             margin-bottom: 10px;
         }
-        select {
-            background-color: black;
-            color: white; /* Mantém o texto visível */
-        }
     </style>
 </head>
+
 <body>
+
+    <nav class="navbar navbar-expand-lg fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('home_cliente') }}">
+                <img src="{{ url_for('static', filename='images/LOGO.png') }}" alt="Logo">
+            </a>
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-5">
+                    <li class="nav-item">
+                        <a href="{{ url_for('perfil_cliente') }}" class="nav-link fs-4">
+                            <i class="fas fa-user-circle"></i> Perfil
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a href="{{ url_for('meus_agendamentos') }}" class="nav-link fs-4">
+                            <i class="fas fa-calendar-alt"></i> Agendamentos
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a href="{{ url_for('meus_pets') }}" class="nav-link fs-4">
+                            <i class="fas fa-paw"></i> Pets
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a href="{{ url_for('loja') }}" class="nav-link fs-4">
+                            <i class="fas fa-store"></i> Loja
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a href="{{ url_for('meu_carrinho') }}" class="nav-link fs-4">
+                            <i class="fas fa-shopping-cart"></i> Carrinho
+                        </a>
+                    </li>
+                </ul>
+
+                <form class="d-flex ms-auto" onsubmit="event.preventDefault(); searchText();">
+                    <input id="searchInput" class="form-control me-2" type="search" placeholder="Pesquisar">
+                    <button class="btn btn-outline-success" type="submit"><i class="fas fa-search"></i></button>
+                </form>
+
+                <ul class="navbar-nav ms-3">
+                    <li class="nav-item">
+                        <a class="nav-link text-danger" href="{{ url_for('logout') }}">
+                            <i class="fas fa-sign-out-alt"></i> Sair
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
     <div class="container-agendamento">
         <h1 class="agendamento-title">Agendar Serviço</h1>
 
-        <!-- Exibe mensagens de erro ou sucesso -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 <ul class="flashes">
                     {% for category, message in messages %}
-                        <li class="{{ category }}">{{ message }}</li>
+                        <li class="alert alert-{{ category }}">{{ message }}</li>
                     {% endfor %}
                 </ul>
             {% endif %}
         {% endwith %}
 
         <form method="POST">
+
+            <div class="label-box">Selecione o Prestador:</div>
             <div class="input-box-agendamento">
-                <label for="cliente_id" class="label-box">Nome do Cliente:</label>
-                <select id="cliente_id" name="cliente_id" required onchange="atualizarPets()">
-                    <option value="">Selecione</option>
-                    {% for cliente in clientes %}
-                        <option value="{{ cliente.id }}">{{ cliente.nome }}</option>
+                <select name="cliente_id" required>
+                    <option value="">Escolha o prestador</option>
+                    {% for c in clientes %}
+                        <option value="{{ c.id }}">{{ c.nome }}</option>
                     {% endfor %}
                 </select>
             </div>
 
+            <div class="label-box">Selecione o Pet:</div>
             <div class="input-box-agendamento">
-                <label for="pet_id" class="label-box">Nome do Pet:</label>
-                <select id="pet_id" name="pet_id" required onchange="atualizarEspecie()">
-                    <option value="">Selecione</option>
-                </select>
-            </div>
-
-            <div class="input-box-agendamento">
-                <label for="especie" class="label-box">Espécie:</label>
-                <select id="especie" name="especie" required>
-                    <option value="">Selecione</option>
-                </select>
-            </div>
-
-            <div class="input-box-agendamento">
-                <label for="servico" class="label-box">Serviço:</label>
-                <select id="servico" name="servico" required>
-                    <option value="Banho">Banho</option>
-                    <option value="Tosa">Tosa</option>
-                </select>
-            </div>
-
-            <div class="input-box-agendamento">
-                <label for="data" class="label-box">Data:</label>
-                <input type="date" id="data" name="data" required>
-            </div>
-
-            <div class="input-box-agendamento">
-                <label for="horario" class="label-box">Horário:</label>
-                <input type="time" id="horario" name="horario" required>
-            </div>
-
-            <div class="input-box-agendamento">
-                <label for="prestador" class="label-box">Prestador:</label>
-                <input type="text" id="prestador" name="prestador" required>
-            </div>
-
-            <div class="input-box-agendamento">
-                <label for="produtos" class="label-box">Produtos:</label>
-                <select id="produtos" name="produtos" multiple required>
-                    <option value="">Selecione os produtos</option>
-                    {% for produto in produtos %}
-                        <option value="{{ produto.id }}" data-preco="{{ produto.preco }}">{{ produto.nome }} - R$ {{ produto.preco }}</option>
+                <select name="pet_id" required>
+                    <option value="">Escolha o pet</option>
+                    {% for p in pets %}
+                        <option value="{{ p.id }}">{{ p.nome }}</option>
                     {% endfor %}
                 </select>
             </div>
 
-            <div id="quantidades-container"></div><br>
+            <div class="label-box">Selecione o Produto:</div>
+            <div class="input-box-agendamento">
+                <select name="produto_id" required>
+                    <option value="">Escolha o produto</option>
+                    {% for pr in produtos %}
+                        <option value="{{ pr.id }}">{{ pr.nome }} - R$ {{ pr.preco }}</option>
+                    {% endfor %}
+                </select>
+            </div>
 
-            <button type="submit" class="agendamento-button">Agendar</button>
+            <div class="label-box">Data:</div>
+            <div class="input-box-agendamento">
+                <input type="date" name="data" required>
+            </div>
+
+            <div class="label-box">Horário:</div>
+            <div class="input-box-agendamento">
+                <input type="time" name="horario" required>
+            </div>
+
+            <button class="agendamento-button" type="submit">Agendar</button>
+
         </form>
+
     </div>
 
-    <script>
-        // Função para atualizar os pets ao selecionar um cliente
-        function atualizarPets() {
-            var cliente_id = document.getElementById('cliente_id').value;
-            if (cliente_id) {
-                fetch(`/pets_por_cliente/${cliente_id}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        const petSelect = document.getElementById('pet_id');
-                        petSelect.innerHTML = '<option value="">Selecione</option>';
-                        data.pets.forEach(pet => {
-                            const option = document.createElement('option');
-                            option.value = pet.id;
-                            option.textContent = pet.nome;
-                            petSelect.appendChild(option);
-                        });
-                    })
-                    .catch(() => alert('Erro ao carregar os pets.'));
-            } else {
-                document.getElementById('pet_id').innerHTML = '<option value="">Selecione</option>';
-            }
-        }
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-        // Função para atualizar a espécie ao selecionar um pet
-        function atualizarEspecie() {
-            var pet_id = document.getElementById('pet_id').value;
-            const especieSelect = document.getElementById('especie');
-            if (pet_id) {
-                fetch(`/pet/${pet_id}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        especieSelect.innerHTML = `<option value="${data.especie}">${data.especie}</option>`;
-                    })
-                    .catch(() => alert('Erro ao carregar a espécie do pet.'));
-            } else {
-                especieSelect.innerHTML = '<option value="">Selecione</option>';
-            }
-        }
-
-        // Adiciona campos de quantidade dinamicamente conforme os produtos são selecionados
-        document.getElementById('produtos').addEventListener('change', function() {
-            const selectedOptions = Array.from(this.selectedOptions);
-            const quantidadesContainer = document.getElementById('quantidades-container');
-            
-            // Limpa os campos de quantidade anteriores
-            quantidadesContainer.innerHTML = '';
-
-            // Para cada produto selecionado, cria um campo de quantidade
-            selectedOptions.forEach(option => {
-                const produtoId = option.value;
-                const preco = parseFloat(option.dataset.preco);
-
-                const quantidadeInput = document.createElement('input');
-                quantidadeInput.type = 'number';
-                quantidadeInput.name = `quantidade_${produtoId}`;
-                quantidadeInput.min = 1;
-                quantidadeInput.value = 1;
-                quantidadeInput.required = true;
-                
-                const label = document.createElement('label');
-                label.textContent = `Quantidade de ${option.textContent}: `;
-                
-                quantidadesContainer.appendChild(label);
-                quantidadesContainer.appendChild(quantidadeInput);
-                quantidadesContainer.appendChild(document.createElement('br'));
-            });
-        });
-    </script>
 </body>
 </html>
