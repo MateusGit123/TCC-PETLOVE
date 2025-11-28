@@ -1,4 +1,4 @@
-PETLOVE - Sistema de Gerenciamento de Pet Shop - MVP
+PET COM CARINHO - Sistema de Gerenciamento de Pet Shop - MVP
 
 Descrição:
 
